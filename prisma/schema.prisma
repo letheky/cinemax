@@ -4,9 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 // ─── NextAuth required models ────────────────────────────────────────────────
@@ -65,17 +63,17 @@ model VerificationToken {
 // ─── App models ──────────────────────────────────────────────────────────────
 
 model Movie {
-  id          String   @id          // tmdb id as string
-  title       String
-  overview    String?
-  posterPath  String?
+  id           String   @id
+  title        String
+  overview     String?
+  posterPath   String?
   backdropPath String?
-  releaseDate String?
-  voteAverage Float?
-  voteCount   Int?
-  runtime     Int?
-  genres      Json?                 // [{id, name}]
-  cachedAt    DateTime @default(now()) @updatedAt
+  releaseDate  String?
+  voteAverage  Float?
+  voteCount    Int?
+  runtime      Int?
+  genres       Json?
+  cachedAt     DateTime @default(now()) @updatedAt
 
   watchlist Watchlist[]
   reviews   Review[]
@@ -97,7 +95,7 @@ model Review {
   id        String   @id @default(cuid())
   userId    String
   movieId   String
-  rating    Int                     // 1–10
+  rating    Int
   content   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
