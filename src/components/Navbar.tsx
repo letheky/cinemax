@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
-  Film, Search, Bookmark, Home, Menu, X,
+  Film, Bookmark, Home, Menu, X,
   TrendingUp, Flame, Award, Clapperboard, ChevronDown, LayoutGrid,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { GENRES } from "@/lib/genres";
+import SearchBar from "@/components/SearchBar";
 
 const exploreLinks = [
   { href: "/trending",    label: "Đang thịnh hành", icon: TrendingUp, desc: "Hot nhất tuần này" },
@@ -18,11 +19,9 @@ const exploreLinks = [
 
 export default function Navbar({ authSlot }: { authSlot?: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [exploreOpen, setExploreOpen] = useState(false);
   const [genreOpen, setGenreOpen] = useState(false);
-  const [searchQ, setSearchQ] = useState("");
   const [scrolled, setScrolled] = useState(false);
 
   const exploreRef = useRef<HTMLDivElement>(null);
@@ -55,14 +54,6 @@ export default function Navbar({ authSlot }: { authSlot?: React.ReactNode }) {
     setGenreOpen(false);
     setMenuOpen(false);
   }, [pathname]);
-
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (searchQ.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQ.trim())}`);
-      setSearchQ("");
-    }
-  }
 
   const isExplorePath = ["/trending", "/now-playing", "/top-rated", "/upcoming"].includes(pathname);
   const isGenrePath = pathname.startsWith("/genre");
@@ -197,19 +188,10 @@ export default function Navbar({ authSlot }: { authSlot?: React.ReactNode }) {
           </Link>
         </div>
 
-        {/* Search */}
-        <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xs">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-            <input
-              type="text"
-              value={searchQ}
-              onChange={(e) => setSearchQ(e.target.value)}
-              placeholder="Tìm phim..."
-              className="w-full bg-white/[0.07] border border-white/[0.08] rounded-full pl-9 pr-4 py-1.5 text-sm placeholder-white/30 focus:outline-none focus:border-white/20 focus:bg-white/10 transition-all"
-            />
-          </div>
-        </form>
+        {/* Search with live results dropdown */}
+        <div className="hidden md:flex flex-1 max-w-xs">
+          <SearchBar variant="desktop" />
+        </div>
 
         {authSlot && <div className="hidden md:block shrink-0">{authSlot}</div>}
 
@@ -226,18 +208,9 @@ export default function Navbar({ authSlot }: { authSlot?: React.ReactNode }) {
       {menuOpen && (
         <div className="md:hidden bg-[#0d0d14]/98 backdrop-blur-xl border-t border-white/[0.07] px-4 py-4 flex flex-col gap-1 max-h-[85vh] overflow-y-auto">
 
-          <form onSubmit={handleSearch} className="mb-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-              <input
-                type="text"
-                value={searchQ}
-                onChange={(e) => setSearchQ(e.target.value)}
-                placeholder="Tìm phim..."
-                className="w-full bg-white/[0.07] border border-white/[0.08] rounded-full pl-9 pr-4 py-2.5 text-sm placeholder-white/30 focus:outline-none focus:border-white/20"
-              />
-            </div>
-          </form>
+          <div className="mb-3">
+            <SearchBar variant="mobile" onNavigate={() => setMenuOpen(false)} />
+          </div>
 
           <Link href="/"
             className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium ${pathname === "/" ? "bg-white/8 text-white" : "text-white/60"}`}
