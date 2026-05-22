@@ -12,6 +12,9 @@ export const metadata: Metadata = {
     description: "Khám phá hàng nghìn bộ phim nổi tiếng",
     type: "website",
   },
+  verification: {
+    google: "I0IASFABp7kbNVIRHwVZsHdOlKAWPjqsjFxEeyLbudU",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
