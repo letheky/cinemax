@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Star, Loader2 } from "lucide-react";
+import { Search, Star, Loader2, X } from "lucide-react";
 import { Movie, IMAGE_BASE } from "@/lib/tmdb";
 
 interface Props {
@@ -22,6 +22,7 @@ export default function SearchBar({ variant = "desktop", onNavigate }: Props) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Debounced search — 300ms after typing stops
   useEffect(() => {
@@ -101,6 +102,13 @@ export default function SearchBar({ variant = "desktop", onNavigate }: Props) {
     onNavigate?.();
   }
 
+  function clearQuery() {
+    setQuery("");
+    setResults([]);
+    setOpen(false);
+    inputRef.current?.focus();
+  }
+
   const isMobile = variant === "mobile";
 
   return (
@@ -109,6 +117,7 @@ export default function SearchBar({ variant = "desktop", onNavigate }: Props) {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
           <input
+            ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -120,14 +129,23 @@ export default function SearchBar({ variant = "desktop", onNavigate }: Props) {
             aria-controls="search-results"
             aria-expanded={open}
             className={`w-full bg-white/[0.07] border border-white/[0.08] rounded-full pl-9 ${
-              loading ? "pr-9" : "pr-4"
+              query ? "pr-9" : "pr-4"
             } text-sm placeholder-white/30 focus:outline-none focus:border-white/20 focus:bg-white/10 transition-all ${
               isMobile ? "py-2.5" : "py-1.5"
             }`}
           />
-          {loading && (
-            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 animate-spin" />
-          )}
+          {loading ? (
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 animate-spin pointer-events-none" />
+          ) : query ? (
+            <button
+              type="button"
+              onClick={clearQuery}
+              aria-label="Xóa nội dung tìm kiếm"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          ) : null}
         </div>
       </form>
 
