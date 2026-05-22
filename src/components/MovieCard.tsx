@@ -15,7 +15,7 @@ export default function MovieCard({ movie, priority = false }: Props) {
   return (
     <Link
       href={`/movie/${movie.id}`}
-      className="group block rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-yellow-400/40 transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-yellow-400/10"
+      className="group block rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-yellow-400/40 transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-yellow-400/10 hover:z-10"
     >
       <div className="relative aspect-[2/3] overflow-hidden bg-white/5">
         {movie.poster_path ? (
