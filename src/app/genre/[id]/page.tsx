@@ -23,7 +23,8 @@ export default async function GenrePage({ params, searchParams }: Props) {
   const data = await tmdb.getByGenre(id, page);
   return (
     <MovieListPage
-      title={`${genre.emoji} ${genre.name}`}
+      title={genre.name}
+      accentColor={genre.color}
       description={`Phim thể loại ${genre.name} phổ biến nhất`}
       movies={data.results}
       currentPage={Number(page)}

@@ -67,9 +67,9 @@ export default function Footer() {
                 <li key={genre.id}>
                   <Link
                     href={`/genre/${genre.id}`}
-                    className="flex items-center gap-1.5 text-sm text-white/50 hover:text-yellow-400 transition-colors"
+                    className="flex items-center gap-2 text-sm text-white/50 hover:text-white/90 transition-colors"
                   >
-                    <span className="text-xs">{genre.emoji}</span>
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: genre.color }} />
                     <span className="truncate">{genre.name}</span>
                   </Link>
                 </li>
