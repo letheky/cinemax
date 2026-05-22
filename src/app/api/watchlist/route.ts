@@ -9,13 +9,16 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const items = await db.watchlist.findMany({
-    where: { userId: session.user.id },
-    include: { movie: true },
-    orderBy: { addedAt: "desc" },
-  });
-
-  return NextResponse.json(items.map((i: { movie: unknown }) => i.movie));
+  try {
+    const items = await db.watchlist.findMany({
+      where: { userId: session.user.id },
+      include: { movie: true },
+      orderBy: { addedAt: "desc" },
+    });
+    return NextResponse.json(items.map((i: { movie: unknown }) => i.movie));
+  } catch {
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
 }
 
 // POST /api/watchlist – thêm phim vào watchlist
@@ -26,17 +29,21 @@ export async function POST(req: Request) {
   const { movieId } = await req.json();
   if (!movieId) return NextResponse.json({ error: "movieId required" }, { status: 400 });
 
-  // Đảm bảo movie tồn tại trong DB (cache từ TMDB)
-  const tmdbMovie = await tmdb.getMovieDetails(String(movieId));
-  await upsertMovie(tmdbMovie);
+  try {
+    // Đảm bảo movie tồn tại trong DB (cache từ TMDB)
+    const tmdbMovie = await tmdb.getMovieDetails(String(movieId));
+    await upsertMovie(tmdbMovie);
 
-  const item = await db.watchlist.upsert({
-    where: { userId_movieId: { userId: session.user.id, movieId: String(movieId) } },
-    update: {},
-    create: { userId: session.user.id, movieId: String(movieId) },
-  });
+    const item = await db.watchlist.upsert({
+      where: { userId_movieId: { userId: session.user.id, movieId: String(movieId) } },
+      update: {},
+      create: { userId: session.user.id, movieId: String(movieId) },
+    });
 
-  return NextResponse.json(item, { status: 201 });
+    return NextResponse.json(item, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: "Failed to add to watchlist" }, { status: 500 });
+  }
 }
 
 // DELETE /api/watchlist?movieId=xxx – xóa khỏi watchlist
@@ -48,9 +55,12 @@ export async function DELETE(req: Request) {
   const movieId = searchParams.get("movieId");
   if (!movieId) return NextResponse.json({ error: "movieId required" }, { status: 400 });
 
-  await db.watchlist.deleteMany({
-    where: { userId: session.user.id, movieId },
-  });
-
-  return NextResponse.json({ success: true });
+  try {
+    await db.watchlist.deleteMany({
+      where: { userId: session.user.id, movieId },
+    });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Failed to remove from watchlist" }, { status: 500 });
+  }
 }

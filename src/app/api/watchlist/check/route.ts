@@ -10,9 +10,12 @@ export async function GET(req: Request) {
   const movieId = searchParams.get("movieId");
   if (!movieId) return NextResponse.json({ saved: false });
 
-  const item = await db.watchlist.findUnique({
-    where: { userId_movieId: { userId: session.user.id, movieId } },
-  });
-
-  return NextResponse.json({ saved: !!item });
+  try {
+    const item = await db.watchlist.findUnique({
+      where: { userId_movieId: { userId: session.user.id, movieId } },
+    });
+    return NextResponse.json({ saved: !!item });
+  } catch {
+    return NextResponse.json({ saved: false });
+  }
 }

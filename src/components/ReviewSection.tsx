@@ -16,15 +16,20 @@ interface Review {
 interface Props {
   movieId: string;
   currentUserId?: string;
+  /** Pre-fetched on the server — skips the client-side loading state entirely. */
+  initialReviews?: Review[];
 }
 
-export default function ReviewSection({ movieId, currentUserId }: Props) {
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [rating, setRating] = useState(0);
+export default function ReviewSection({ movieId, currentUserId, initialReviews }: Props) {
+  const myInitial = initialReviews?.find((r) => r.user.id === currentUserId);
+
+  const [reviews, setReviews] = useState<Review[]>(initialReviews ?? []);
+  const [loading, setLoading] = useState(initialReviews === undefined);
+  // Lazy-initialise form from server data so the form is ready without waiting
+  const [rating, setRating] = useState(myInitial?.rating ?? 0);
   const [hoverRating, setHoverRating] = useState(0);
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState(myInitial?.content ?? "");
   const [submitting, setSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   const myReview = reviews.find((r) => r.user.id === currentUserId);
@@ -32,7 +37,10 @@ export default function ReviewSection({ movieId, currentUserId }: Props) {
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
     : null;
 
+  // Only fetch from the API when no server data was provided
   useEffect(() => {
+    if (initialReviews !== undefined) return;
+
     fetch(`/api/reviews?movieId=${movieId}`)
       .then((r) => r.json())
       .then((data) => {
@@ -41,6 +49,7 @@ export default function ReviewSection({ movieId, currentUserId }: Props) {
         if (mine) { setRating(mine.rating); setContent(mine.content ?? ""); }
       })
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movieId, currentUserId]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -101,6 +110,7 @@ export default function ReviewSection({ movieId, currentUserId }: Props) {
               onMouseEnter={() => setHoverRating(n)}
               onMouseLeave={() => setHoverRating(0)}
               onClick={() => setRating(n)}
+              aria-label={`Đánh giá ${n}/10`}
               className="transition-transform hover:scale-125"
             >
               <Star
@@ -123,8 +133,12 @@ export default function ReviewSection({ movieId, currentUserId }: Props) {
           placeholder={currentUserId ? "Chia sẻ cảm nhận của bạn về bộ phim..." : "Đăng nhập để viết đánh giá"}
           disabled={!currentUserId}
           rows={3}
+          maxLength={2000}
           className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm placeholder-white/30 focus:outline-none focus:border-yellow-400/40 resize-none disabled:opacity-50 disabled:cursor-not-allowed"
         />
+        {content.length > 1800 && (
+          <p className="text-xs text-white/40 mt-1 text-right">{content.length}/2000</p>
+        )}
 
         <div className="flex justify-between items-center mt-3">
           {myReview && (

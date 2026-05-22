@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Star } from "lucide-react";
-import { Movie, getPosterUrl } from "@/lib/tmdb";
+import { Movie, IMAGE_BASE } from "@/lib/tmdb";
 
 interface Props {
   movie: Movie;
@@ -18,15 +18,18 @@ export default function MovieCard({ movie, priority = false }: Props) {
       className="group block rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-yellow-400/40 transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-yellow-400/10"
     >
       <div className="relative aspect-[2/3] overflow-hidden bg-white/5">
-        <Image
-          src={getPosterUrl(movie.poster_path)}
-          alt={movie.title}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-110"
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-          priority={priority}
-          unoptimized
-        />
+        {movie.poster_path ? (
+          <Image
+            src={`${IMAGE_BASE}/w500${movie.poster_path}`}
+            alt={movie.title}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            priority={priority}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-4xl text-white/20">🎬</div>
+        )}
         {/* Rating badge */}
         <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs font-semibold">
           <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />

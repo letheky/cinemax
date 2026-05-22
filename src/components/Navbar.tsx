@@ -39,8 +39,15 @@ export default function Navbar({ authSlot }: { authSlot?: React.ReactNode }) {
       if (exploreRef.current && !exploreRef.current.contains(e.target as Node)) setExploreOpen(false);
       if (genreRef.current && !genreRef.current.contains(e.target as Node)) setGenreOpen(false);
     }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") { setExploreOpen(false); setGenreOpen(false); }
+    }
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, []);
 
   useEffect(() => {
@@ -93,6 +100,9 @@ export default function Navbar({ authSlot }: { authSlot?: React.ReactNode }) {
           <div ref={exploreRef} className="relative">
             <button
               onClick={() => { setExploreOpen(!exploreOpen); setGenreOpen(false); }}
+              aria-haspopup="true"
+              aria-expanded={exploreOpen}
+              aria-controls="explore-menu"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 isExplorePath ? "bg-white/10 text-white" : "text-white/60 hover:text-white hover:bg-white/5"
               }`}
@@ -103,12 +113,13 @@ export default function Navbar({ authSlot }: { authSlot?: React.ReactNode }) {
             </button>
 
             {exploreOpen && (
-              <div className="absolute top-full left-0 mt-2 w-52 bg-[#111118] border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
+              <div id="explore-menu" role="menu" className="absolute top-full left-0 mt-2 w-52 bg-[#111118] border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
                 <div className="p-1.5">
                   {exploreLinks.map(({ href, label, icon: Icon, desc }) => (
                     <Link
                       key={href}
                       href={href}
+                      role="menuitem"
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors group ${
                         pathname === href ? "bg-yellow-400/10 text-yellow-400" : "text-white/70 hover:bg-white/5 hover:text-white"
                       }`}
@@ -129,6 +140,9 @@ export default function Navbar({ authSlot }: { authSlot?: React.ReactNode }) {
           <div ref={genreRef} className="relative">
             <button
               onClick={() => { setGenreOpen(!genreOpen); setExploreOpen(false); }}
+              aria-haspopup="true"
+              aria-expanded={genreOpen}
+              aria-controls="genre-menu"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 isGenrePath ? "bg-white/10 text-white" : "text-white/60 hover:text-white hover:bg-white/5"
               }`}
@@ -139,7 +153,7 @@ export default function Navbar({ authSlot }: { authSlot?: React.ReactNode }) {
             </button>
 
             {genreOpen && (
-              <div className="absolute top-full left-0 mt-2 w-[340px] bg-[#111118] border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
+              <div id="genre-menu" role="menu" className="absolute top-full left-0 mt-2 w-[340px] bg-[#111118] border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
                 <div className="px-3 pt-3 pb-1">
                   <p className="text-[11px] font-semibold text-white/25 uppercase tracking-widest mb-2 px-1">
                     Chọn thể loại
@@ -152,6 +166,7 @@ export default function Navbar({ authSlot }: { authSlot?: React.ReactNode }) {
                       <Link
                         key={genre.id}
                         href={`/genre/${genre.id}`}
+                        role="menuitem"
                         className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all group ${
                           isActive ? "bg-white/8" : "hover:bg-white/5"
                         }`}
