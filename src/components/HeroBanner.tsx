@@ -17,7 +17,6 @@ export default function HeroBanner({ movie }: { movie: Movie }) {
           fill
           priority
           className="object-cover object-top"
-          unoptimized
         />
       )}
       {/* Gradient overlays */}

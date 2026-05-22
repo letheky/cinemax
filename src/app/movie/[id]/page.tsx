@@ -1,8 +1,12 @@
-import { tmdb, getBackdropUrl, getPosterUrl } from "@/lib/tmdb";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Star, Clock, Calendar, DollarSign, Users } from "lucide-react";
+import { tmdb, getBackdropUrl, getPosterUrl, IMAGE_BASE } from "@/lib/tmdb";
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
 import WatchlistButton from "@/components/WatchlistButton";
-import Link from "next/link";
+import ReviewSection from "@/components/ReviewSection";
+import MovieCard from "@/components/MovieCard";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -20,12 +24,42 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function MovieDetailPage({ params }: Props) {
   const { id } = await params;
+
+  // Fetch TMDB data + auth in parallel
   let movie;
   try {
     movie = await tmdb.getMovieDetails(id);
   } catch {
     notFound();
   }
+
+  const session = await auth();
+  const currentUserId = session?.user?.id;
+  const movieId = String(movie.id);
+
+  // Fetch reviews + watchlist status in parallel (both need movieId)
+  const [reviewsRaw, watchlistItem] = await Promise.all([
+    db.review.findMany({
+      where: { movieId },
+      include: { user: { select: { id: true, name: true, image: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    currentUserId
+      ? db.watchlist.findUnique({
+          where: { userId_movieId: { userId: currentUserId, movieId } },
+        })
+      : Promise.resolve(null),
+  ]);
+
+  // Normalise Date → string so the Client Component can receive it via props
+  const initialReviews = reviewsRaw.map((r) => ({
+    id: r.id,
+    rating: r.rating,
+    content: r.content,
+    createdAt: r.createdAt.toISOString(),
+    user: r.user,
+  }));
+  const initialSaved = !!watchlistItem;
 
   const backdrop = getBackdropUrl(movie.backdrop_path);
   const poster = getPosterUrl(movie.poster_path, "w342");
@@ -46,8 +80,14 @@ export default async function MovieDetailPage({ params }: Props) {
       {/* Backdrop */}
       <div className="relative h-[50vh] overflow-hidden">
         {backdrop && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={backdrop} alt="" className="w-full h-full object-cover object-top" />
+          <Image
+            src={backdrop}
+            alt=""
+            fill
+            priority
+            className="object-cover object-top"
+            sizes="100vw"
+          />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/60 to-black/40" />
       </div>
@@ -57,12 +97,19 @@ export default async function MovieDetailPage({ params }: Props) {
         <div className="flex flex-col sm:flex-row gap-6 mb-8">
           {/* Poster */}
           <div className="shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={poster}
-              alt={movie.title}
-              className="w-40 sm:w-52 rounded-xl shadow-2xl border border-white/10"
-            />
+            {movie.poster_path ? (
+              <Image
+                src={poster}
+                alt={movie.title}
+                width={342}
+                height={513}
+                priority
+                sizes="(max-width: 640px) 160px, 208px"
+                className="w-40 sm:w-52 rounded-xl shadow-2xl border border-white/10"
+              />
+            ) : (
+              <div className="w-40 sm:w-52 aspect-[2/3] rounded-xl bg-white/10 flex items-center justify-center text-4xl">🎬</div>
+            )}
           </div>
 
           {/* Info */}
@@ -121,7 +168,7 @@ export default async function MovieDetailPage({ params }: Props) {
                   ▶ Xem trailer
                 </a>
               )}
-              <WatchlistButton movie={movie} />
+              <WatchlistButton movieId={movieId} initialSaved={initialSaved} />
             </div>
           </div>
         </div>
@@ -157,13 +204,14 @@ export default async function MovieDetailPage({ params }: Props) {
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
               {cast.map((member) => (
                 <div key={member.id} className="shrink-0 w-24 text-center">
-                  <div className="w-20 h-20 mx-auto rounded-full overflow-hidden bg-white/10 border border-white/10 mb-2">
+                  <div className="relative w-20 h-20 mx-auto rounded-full overflow-hidden bg-white/10 border border-white/10 mb-2">
                     {member.profile_path ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={`https://image.tmdb.org/t/p/w185${member.profile_path}`}
+                      <Image
+                        src={`${IMAGE_BASE}/w185${member.profile_path}`}
                         alt={member.name}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        sizes="80px"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-2xl">👤</div>
@@ -177,35 +225,20 @@ export default async function MovieDetailPage({ params }: Props) {
           </section>
         )}
 
+        {/* Reviews – list pre-fetched server-side, form still interactive */}
+        <ReviewSection
+          movieId={movieId}
+          currentUserId={currentUserId}
+          initialReviews={initialReviews}
+        />
+
         {/* Similar */}
         {similar.length > 0 && (
           <section className="mb-12">
             <h2 className="text-lg font-bold mb-4">Phim tương tự</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {similar.map((m) => (
-                <Link
-                  key={m.id}
-                  href={`/movie/${m.id}`}
-                  className="group block rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-yellow-400/40 transition-all hover:scale-[1.03]"
-                >
-                  <div className="relative aspect-[2/3] overflow-hidden">
-                    {m.poster_path ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={`https://image.tmdb.org/t/p/w300${m.poster_path}`}
-                        alt={m.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-4xl text-white/20">🎬</div>
-                    )}
-                  </div>
-                  <div className="p-2">
-                    <p className="text-xs font-medium line-clamp-2 group-hover:text-yellow-400 transition-colors">
-                      {m.title}
-                    </p>
-                  </div>
-                </Link>
+                <MovieCard key={m.id} movie={m} />
               ))}
             </div>
           </section>

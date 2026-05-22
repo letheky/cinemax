@@ -1,6 +1,7 @@
 import { tmdb } from "@/lib/tmdb";
 import Link from "next/link";
 import { Search } from "lucide-react";
+import MovieCard from "@/components/MovieCard";
 
 interface Props {
   searchParams: Promise<{ q?: string; page?: string }>;
@@ -43,10 +44,6 @@ export default async function SearchPage({ searchParams }: Props) {
       </form>
 
       {/* Results */}
-      {q && !results && (
-        <p className="text-white/50">Đang tìm kiếm...</p>
-      )}
-
       {results && results.results.length === 0 && (
         <div className="text-center py-20">
           <p className="text-5xl mb-4">🔍</p>
@@ -61,35 +58,8 @@ export default async function SearchPage({ searchParams }: Props) {
             Tìm thấy <span className="text-white font-semibold">{results.total_results.toLocaleString()}</span> kết quả cho &quot;{q}&quot;
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {results.results.map((movie) => (
-              <Link
-                key={movie.id}
-                href={`/movie/${movie.id}`}
-                className="group block rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-yellow-400/40 transition-all hover:scale-[1.03]"
-              >
-                <div className="relative aspect-[2/3] overflow-hidden bg-white/5">
-                  {movie.poster_path ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`}
-                      alt={movie.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl text-white/20">🎬</div>
-                  )}
-                  <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs font-semibold">
-                    ⭐ {movie.vote_average?.toFixed(1)}
-                  </div>
-                </div>
-                <div className="p-3">
-                  <h3 className="text-sm font-medium line-clamp-2 group-hover:text-yellow-400 transition-colors">
-                    {movie.title}
-                  </h3>
-                  <p className="text-xs text-white/50 mt-1">{movie.release_date?.slice(0, 4)}</p>
-                </div>
-              </Link>
+            {results.results.map((movie, i) => (
+              <MovieCard key={movie.id} movie={movie} priority={i < 6} />
             ))}
           </div>
 
