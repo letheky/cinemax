@@ -23,7 +23,7 @@ export default function MovieCard({ movie, priority = false }: Props) {
             src={`${IMAGE_BASE}/w500${movie.poster_path}`}
             alt={movie.title}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            className="object-cover transition-[filter] duration-300 group-hover:brightness-110"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             priority={priority}
           />
