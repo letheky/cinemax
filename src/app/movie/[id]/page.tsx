@@ -1,7 +1,9 @@
 import { tmdb, getBackdropUrl, getPosterUrl } from "@/lib/tmdb";
+import { auth } from "@/auth";
 import { notFound } from "next/navigation";
 import { Star, Clock, Calendar, DollarSign, Users } from "lucide-react";
 import WatchlistButton from "@/components/WatchlistButton";
+import ReviewSection from "@/components/ReviewSection";
 import Link from "next/link";
 
 interface Props {
@@ -26,6 +28,9 @@ export default async function MovieDetailPage({ params }: Props) {
   } catch {
     notFound();
   }
+
+  const session = await auth();
+  const currentUserId = session?.user?.id;
 
   const backdrop = getBackdropUrl(movie.backdrop_path);
   const poster = getPosterUrl(movie.poster_path, "w342");
@@ -121,7 +126,7 @@ export default async function MovieDetailPage({ params }: Props) {
                   ▶ Xem trailer
                 </a>
               )}
-              <WatchlistButton movie={movie} />
+              <WatchlistButton movieId={String(movie.id)} />
             </div>
           </div>
         </div>
@@ -176,6 +181,9 @@ export default async function MovieDetailPage({ params }: Props) {
             </div>
           </section>
         )}
+
+        {/* Reviews */}
+        <ReviewSection movieId={String(movie.id)} currentUserId={currentUserId} />
 
         {/* Similar */}
         {similar.length > 0 && (

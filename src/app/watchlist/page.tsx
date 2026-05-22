@@ -1,27 +1,23 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Bookmark, Star, Trash2, Film } from "lucide-react";
-import { Movie } from "@/lib/tmdb";
-import { getWatchlist, removeFromWatchlist } from "@/lib/watchlist";
+import { Bookmark, Star, Film } from "lucide-react";
+import WatchlistClientActions from "@/components/WatchlistClientActions";
 
-export default function WatchlistPage() {
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [mounted, setMounted] = useState(false);
+export const metadata = { title: "Danh sách của tôi – CineMax" };
 
-  useEffect(() => {
-    const list = getWatchlist();
-    setMounted(true);
-    setMovies(list);
-  }, []);
+export default async function WatchlistPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
 
-  function handleRemove(id: number) {
-    removeFromWatchlist(id);
-    setMovies((prev) => prev.filter((m) => m.id !== id));
-  }
+  const items = await db.watchlist.findMany({
+    where: { userId: session.user.id },
+    include: { movie: true },
+    orderBy: { addedAt: "desc" },
+  });
 
-  if (!mounted) return null;
+  const movies = items.map((i: { movie: { id: string; title: string; posterPath: string | null; releaseDate: string | null; voteAverage: number | null; overview: string | null } }) => i.movie);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-12">
@@ -46,16 +42,13 @@ export default function WatchlistPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {movies.map((movie) => (
-            <div
-              key={movie.id}
-              className="group bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-yellow-400/30 transition-all"
-            >
+            <div key={movie.id} className="group bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-yellow-400/30 transition-all">
               <Link href={`/movie/${movie.id}`} className="flex gap-3 p-3">
                 <div className="shrink-0 w-16 h-24 rounded-lg overflow-hidden bg-white/10">
-                  {movie.poster_path ? (
+                  {movie.posterPath ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={`https://image.tmdb.org/t/p/w185${movie.poster_path}`}
+                      src={`https://image.tmdb.org/t/p/w185${movie.posterPath}`}
                       alt={movie.title}
                       className="w-full h-full object-cover"
                     />
@@ -67,27 +60,19 @@ export default function WatchlistPage() {
                   <h3 className="font-medium text-sm leading-tight line-clamp-2 group-hover:text-yellow-400 transition-colors mb-1">
                     {movie.title}
                   </h3>
-                  <p className="text-xs text-white/50 mb-2">
-                    {movie.release_date?.slice(0, 4)}
-                  </p>
-                  <div className="flex items-center gap-1 text-xs">
-                    <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                    <span className="text-yellow-400 font-semibold">
-                      {movie.vote_average?.toFixed(1)}
-                    </span>
-                  </div>
-                  <p className="text-xs text-white/40 mt-2 line-clamp-2">{movie.overview}</p>
+                  <p className="text-xs text-white/50 mb-2">{movie.releaseDate?.slice(0, 4)}</p>
+                  {movie.voteAverage && (
+                    <div className="flex items-center gap-1 text-xs">
+                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                      <span className="text-yellow-400 font-semibold">{movie.voteAverage.toFixed(1)}</span>
+                    </div>
+                  )}
+                  {movie.overview && (
+                    <p className="text-xs text-white/40 mt-1 line-clamp-2">{movie.overview}</p>
+                  )}
                 </div>
               </Link>
-              <div className="px-3 pb-3">
-                <button
-                  onClick={() => handleRemove(movie.id)}
-                  className="w-full flex items-center justify-center gap-1.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-400/10 py-1.5 rounded-lg transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Xóa khỏi danh sách
-                </button>
-              </div>
+              <WatchlistClientActions movieId={movie.id} />
             </div>
           ))}
         </div>

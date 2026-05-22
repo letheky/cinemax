@@ -6,8 +6,11 @@ import {
   Film, Search, Bookmark, Home, Menu, X,
   TrendingUp, Flame, Award, Clapperboard, ChevronDown, Grid3X3,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { GENRES } from "@/lib/genres";
+import dynamic from "next/dynamic";
+
+const AuthButton = dynamic(() => import("./AuthButton"), { ssr: false });
 
 const exploreLinks = [
   { href: "/trending",    label: "Đang thịnh hành", icon: TrendingUp, desc: "Hot nhất tuần này" },
@@ -188,6 +191,13 @@ export default function Navbar() {
             />
           </div>
         </form>
+
+        {/* Auth button */}
+        <div className="hidden md:block shrink-0">
+          <Suspense fallback={<div className="w-24 h-8 rounded-lg bg-white/5 animate-pulse" />}>
+            <AuthButton />
+          </Suspense>
+        </div>
 
         {/* Mobile menu button */}
         <button
